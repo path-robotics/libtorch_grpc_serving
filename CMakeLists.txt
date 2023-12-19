@@ -4,6 +4,8 @@ project(custom_ops
     VERSION 1.0
     LANGUAGES C CXX)
 
+
+set(CMAKE_CXX_STANDARD 17)
 # Let's ensure -std=c++xx instead of -std=g++xx
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(PROTO_GENERATED_FILES_DIR "${PROJECT_SOURCE_DIR}/protos")

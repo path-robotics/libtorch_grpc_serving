@@ -37,19 +37,12 @@ def vector_diff(a: np.ndarray, b: np.ndarray) -> bool:
 
     return np.allclose(a, b, atol=1e-04)
 
-
-if __name__ == '__main__':
-
-    #input_vector = np.array([0.0] * 210)
-    input_vector = np.random.rand(210)
-    server_output_vector = do_server_inference(input_vector)
-    jit_output_vector = do_jit_inference(input_vector)
-    
+def concurrency_test(input_vector: np.ndarray):
     threads = []
-    num_threads = 700
+    num_threads = 70
     for i in range(num_threads):
         threads.append(threading.Thread(target=do_server_inference, args=(input_vector,)))
-    
+
     start_time = time.time()
     for thread in threads:
         thread.start()
@@ -57,9 +50,19 @@ if __name__ == '__main__':
     for thread in threads:
         thread.join()
     end_time = time.time()
+    return end_time - start_time
 
-    elapsed_time = end_time - start_time
+if __name__ == '__main__':
 
-    print(f"Elapsed Time: {elapsed_time}")
+    #input_vector = np.array([0.0] * 210)
+    input_vector = np.random.rand(210)
+
+    for i in range(1): 
+        server_output_vector = do_server_inference(input_vector)
+    jit_output_vector = do_jit_inference(input_vector)
+    
     print(f"Are the two output vectors equal: {vector_diff(server_output_vector, jit_output_vector)}")
- 
+    
+    for i in range(100):    
+        concurrency_test(input_vector)
+
