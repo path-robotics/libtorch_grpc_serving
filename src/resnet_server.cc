@@ -2,8 +2,8 @@
 #include <memory>
 #include <vector>
 #include <string>
-
 #include <grpcpp/grpcpp.h>
+
 #include "example.grpc.pb.h"
 #include "resnet.h"
 
@@ -12,35 +12,59 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using example::ImageMatrix;
-using example::ClassifyResult;
-using example::ResNet;
+using AdaptiveModels::InputVector;
+using AdaptiveModels::OutputVector;
+using AdaptiveModels::WeldBeadModel;
 
-ResNetModule resnet(RESNETSAVEPATH);
+WeldBeadModule weld_bead_module("/home/pjochem/Desktop/weld_bead_model_jit.pt");
+std::string server_address("0.0.0.0:50051");
 
-class ResNetServiceImpl : public ResNet::Service {
-  Status ClassifyImage (ServerContext* context, const ImageMatrix* image,
-                         ClassifyResult* res) override {
-    std::vector<int> temp;
-    for (int i = 0; i < image->image_matrix_size(); ++i) {
-      temp.push_back(image->image_matrix(i)); 
-    }
-    auto classify_result = resnet.classify(temp);
-    res->set_category(classify_result);
+class WeldBeadModelServiceImpl : public WeldBeadModel::Service {
+  Status inference (ServerContext* context, const InputVector* input, OutputVector* result) override {
+ 
+    try {
+	    
+      // Create the input tensor.
+    	torch::Tensor input_tensor = torch::zeros({210}, torch::dtype(torch::kFloat32));
+    	for (int i = 0; i < (input->data()).size(); ++i) {
+     		input_tensor[i] = input->data(i);
+    	}
+
+    	// Use the neural network.
+    	torch::Tensor output_tensor = weld_bead_module.classify(input_tensor);
+	
+	    // Convert the output tensor to the protocol buffer type.
+      for (int i = 0; i < 206; i++) {
+        result->add_data(output_tensor[i].item<double>());
+      }
+    } 
+    
+    catch (const std::exception& ex) {
+	    std::cout << ex.what() << std::endl;
+    }    
+    
     return Status::OK;
-  }
+    }
 };
 
 void RunServer() {
-  std::string server_address("0.0.0.0:50051");
-  ResNetServiceImpl service;
+
+  WeldBeadModelServiceImpl service;
 
   ServerBuilder builder;
+
+  int max_num_threads = 100;
+  grpc::ResourceQuota resource_quota;
+  resource_quota.SetMaxThreads(max_num_threads);
+  builder.SetResourceQuota(resource_quota);
+
   // Listen on the given address without any authentication mechanism.
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
   builder.RegisterService(&service);
+  
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;

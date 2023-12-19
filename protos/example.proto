@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-package example;
+package AdaptiveModels;
 
-service ResNet {
-  rpc ClassifyImage (ImageMatrix) returns (ClassifyResult) {}
+service WeldBeadModel {
+  rpc inference (InputVector) returns (OutputVector) {}
 }
 
-message ImageMatrix {
-  repeated int32 image_matrix = 1;
+message InputVector {
+  repeated double data = 210 [packed=true];
 }
 
-message ClassifyResult {
-  float category = 1;
+message OutputVector {
+  repeated double data = 216 [packed=true];
 }

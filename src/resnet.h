@@ -1,5 +1,5 @@
-#ifndef RESNET_H_
-#define RESNET_H_
+#ifndef WELD_BEAD_MODULE_H_
+#define WELD_BEAD_MODULE_H_
 
 #include <torch/script.h> // One-stop header.
 #include <iostream>
@@ -7,14 +7,16 @@
 #include <vector>
 #include <string>
 
-class ResNetModule : public torch::jit::script::Module {
+class WeldBeadModule : public torch::jit::script::Module {
  public:
-  ResNetModule(const std::string& model_path) {
-    _module = torch::jit::load(model_path);
+  WeldBeadModule(const std::string& model_path) {
+    module = torch::jit::load(model_path);
   }
-  float classify(std::vector<int>& vec);
+  
+  torch::Tensor classify(torch::Tensor& input_tensor);
+ 
  private:
-  torch::jit::script::Module _module;
+  torch::jit::script::Module module;
 };
 
-#endif // RESNET_H_
+#endif // WELD_BEAD_MODULE_H_
