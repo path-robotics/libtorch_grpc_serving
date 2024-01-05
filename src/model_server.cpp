@@ -3,51 +3,45 @@
 #include <vector>
 #include <string>
 #include <grpcpp/grpcpp.h>
-
-#include "example.grpc.pb.h"
-#include "resnet.h"
+#include <string>
+#include "weld_bead_model.grpc.pb.h"
+#include "weld_bead_model.hpp"
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using AdaptiveModels::InputVector;
-using AdaptiveModels::OutputVector;
-using AdaptiveModels::WeldBeadModel;
+using WeldBeadModel::InferenceService;
+using WeldBeadModel::InputVector;
+using WeldBeadModel::OutputVector;
 
-WeldBeadModule weld_bead_module("/home/pjochem/Desktop/weld_bead_model_jit.pt");
-std::string server_address("0.0.0.0:50051");
+/* Is a Torchscript module thread safe?
+ * Yes, https://discuss.pytorch.org/t/is-inference-thread-safe/88583
+ */
 
-class WeldBeadModelServiceImpl : public WeldBeadModel::Service {
-  Status inference (ServerContext* context, const InputVector* input, OutputVector* result) override {
+WeldBeadModule weld_bead_module("/home/pjochem/Desktop/libtorch_grpc_serving/data/model_store/jit_model_v1_from_shared_drive.pt");
+
+class WeldBeadModelServiceImpl : public InferenceService::Service {
+  Status inference (ServerContext* context, const InputVector* input, OutputVector* output) override {
  
     try {
-	    
-      // Create the input tensor.
-    	torch::Tensor input_tensor = torch::zeros({210}, torch::dtype(torch::kFloat32));
-    	for (int i = 0; i < (input->data()).size(); ++i) {
-     		input_tensor[i] = input->data(i);
-    	}
-
     	// Use the neural network.
-    	torch::Tensor output_tensor = weld_bead_module.classify(input_tensor);
-	
-	    // Convert the output tensor to the protocol buffer type.
-      for (int i = 0; i < 206; i++) {
-        result->add_data(output_tensor[i].item<double>());
-      }
+    	weld_bead_module.inference(input, output);
     } 
     
     catch (const std::exception& ex) {
 	    std::cout << ex.what() << std::endl;
+
+      // How do I return an error message?
+      return Status::OK;
     }    
     
     return Status::OK;
     }
 };
 
-void RunServer() {
+void RunServer(std::string server_address) {
 
   WeldBeadModelServiceImpl service;
 
@@ -67,7 +61,7 @@ void RunServer() {
   
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+  std::cout << "Server listening on " << server_address << std::endl << std::flush;
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
@@ -76,6 +70,19 @@ void RunServer() {
 
 
 int main(int argc, const char* argv[]) {
-  RunServer();
+
+  using namespace std;
+  vector<string> addresses = {"0.0.0.0:50051"};
+  vector<thread*> threads;
+  for (auto& address: addresses) {
+
+    thread* next_thread = new thread(RunServer, address);
+    threads.push_back(next_thread);
+  }
+
+  for (auto& thread: threads) {
+    thread->join();
+  }
+
   return 0;
 }

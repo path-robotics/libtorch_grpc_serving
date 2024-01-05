@@ -1,9 +1,8 @@
-add_library(resnet resnet.h resnet.cc)
-target_link_libraries(resnet
-    ${TORCH_LIBRARIES})
+add_library(adaptive_welding_models weld_bead_model.hpp weld_bead_model.cpp)
+target_link_libraries(adaptive_welding_models ${TORCH_LIBRARIES})
 
-add_executable(resnet_server resnet_server.cc ${PROTO_GENERATED_FILES_DIR}/example.pb.cc ${PROTO_GENERATED_FILES_DIR}/example.grpc.pb.cc)
-target_link_libraries(resnet_server
+add_executable(model_server model_server.cpp ${PROTO_GENERATED_FILES_DIR}/weld_bead_model.pb.cc ${PROTO_GENERATED_FILES_DIR}/weld_bead_model.grpc.pb.cc)
+target_link_libraries(model_server
     ${_GRPC_GRPCPP_UNSECURE}
     ${_PROTOBUF_LIBPROTOBUF}
-    resnet)
+    adaptive_welding_models)

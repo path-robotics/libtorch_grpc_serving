@@ -1,10 +1,6 @@
 syntax = "proto3";
 
-package AdaptiveModels;
-
-service WeldBeadModel {
-  rpc inference (InputVector) returns (OutputVector) {}
-}
+package WeldBeadModel;
 
 message InputVector {
   repeated double data = 210 [packed=true];
@@ -13,3 +9,8 @@ message InputVector {
 message OutputVector {
   repeated double data = 216 [packed=true];
 }
+
+service InferenceService {
+  rpc inference (InputVector) returns (OutputVector) {}
+}
+
