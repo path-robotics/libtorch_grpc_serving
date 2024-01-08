@@ -20,7 +20,7 @@ using WeldBeadModel::OutputVector;
  * Yes, https://discuss.pytorch.org/t/is-inference-thread-safe/88583
  */
 
-WeldBeadModule weld_bead_module("/home/pjochem/Desktop/libtorch_grpc_serving/data/model_store/jit_model_v1_from_shared_drive.pt");
+WeldBeadModule weld_bead_module("/home/pjochem/Desktop/jit_model_v1_from_shared_drive.pt");
 
 class WeldBeadModelServiceImpl : public InferenceService::Service {
   Status inference (ServerContext* context, const InputVector* input, OutputVector* output) override {

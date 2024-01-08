@@ -26,7 +26,10 @@ set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
 find_package(gRPC CONFIG REQUIRED)
 message(STATUS "Using gRPC ${gRPC_VERSION}")
 
+list(APPEND CMAKE_PREFIX_PATH "/home/pjochem/Desktop/libtorch_grpc_serving/third_party/libtorch/share/cmake/Torch")
+set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
 find_package(Torch REQUIRED)
+set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
 message(STATUS "Torch libraries: ${TORCH_LIBRARIES}")
 
 set(_GRPC_GRPCPP_UNSECURE gRPC::grpc++_unsecure)
